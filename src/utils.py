@@ -1,6 +1,15 @@
 import logging
 import os
 
+'''
+Example:
+
+from utils import *
+
+logger = build_logger("model")
+logger.info(".......")
+
+'''
 def build_logger(name):
 	log_directory = "../logs"
 	file_path = os.path.join(log_directory, "logger_" + name + ".txt")
@@ -14,13 +23,3 @@ def build_logger(name):
 	handler.setFormatter(fmt)
 	logging.basicConfig(filename=file_path, filemode='w', format=fmt)
 	return logger
-
-'''
-Example:
-
-from utils import *
-
-logger = build_logger("model")
-logger.info(".......")
-
-'''
