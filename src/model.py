@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import config
+from utils import *
 
 in_channels = 1
 map_size = (8, 8)
@@ -142,9 +143,17 @@ def conv3x3(in_channels):
 
 if __name__ == "__main__":
 	model = CNN_Net()
-	print(model)
-	print("Number of trainable parameters:", model.number_of_trainable_parameters())
 	example_input = torch.randn((5, 1, 8, 8))
 	values, policies = model(example_input)
+
+	print(model)
+	print("Number of trainable parameters:", model.number_of_trainable_parameters())
+	logger = build_logger("model")
+	logger.info("Number of trainable parameters: " +\
+			    str(model.number_of_trainable_parameters()))
+	logger.info(values.shape)
+	logger.info(policies.shape)
+	logger.info(model)
+
 	print(values.shape)
 	print(policies.shape)
