@@ -48,7 +48,7 @@ class Policy_head(nn.Module):
 		self.bn = nn.BatchNorm2d(nb_filters_policy_head)
 		self.relu = nn.ReLU(inplace=True)
 		self.fc = nn.Linear(in_features=nb_filters_policy_head * map_size[0] * map_size[1], 
-							out_features=map_size[0] * map_size[1] + 1,
+							out_features=map_size[0] * map_size[1] * 4,
 							bias=True)
 
 
@@ -146,14 +146,9 @@ if __name__ == "__main__":
 	example_input = torch.randn((5, 1, 8, 8))
 	values, policies = model(example_input)
 
-	print(model)
-	print("Number of trainable parameters:", model.number_of_trainable_parameters())
 	logger = build_logger("model")
 	logger.info("Number of trainable parameters: " +\
 			    str(model.number_of_trainable_parameters()))
 	logger.info(values.shape)
 	logger.info(policies.shape)
 	logger.info(model)
-
-	print(values.shape)
-	print(policies.shape)
