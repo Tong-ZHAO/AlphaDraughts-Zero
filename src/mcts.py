@@ -31,6 +31,15 @@ class StateNode:
                 out_node = StateNode(action, out_state)
                 action.set_child(out_node)
                 self.actions.append(action)
+
+    def get_movable_pieces(self):
+
+        pieces = self.state.pieces
+        # create mask: 1 - movable
+        mask = np.zeros((8, 8))
+        mask[pieces[:, 0], pieces[:, 1]] = 1
+
+        return mask
                 
 
     def get_children(self):
@@ -110,7 +119,11 @@ class MCTS:
             actions.append(max_action)
             curr_node = max_action.out_node
 
-        prior, value = net(curr_node.map)
+        curr_input = [ curr_node.map.array,                         # current game map
+                       curr_node.get_movable_pieces(),              # piece mask map
+                       np.ones((8, 8)) * curr_node.player.mask]     # player map
+
+        prior, value = net(np.array(curr_input))
 
         curr_node.init_children(prior)
         self.num_node += len(curr_node.actions)

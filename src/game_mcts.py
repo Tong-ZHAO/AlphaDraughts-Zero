@@ -24,7 +24,7 @@ class Map:
         self.map(x, y) = value
 
     def __repr__(self):
-        return 'Map\n' + np.array2string(self.map
+        return 'Map\n' + np.array2string(self.map)
 
     def num_pieces(self, white):
         if white:
@@ -108,7 +108,8 @@ def move_piece(old_state, curr_x, curr_y, move):
     if move[2] or flag:
         return GameState(my_map, old_state.opponent, old_state.player)
     else:
-        return GameState(my_map, old_state.player, old_state.opponent, [[new_x, new_y]])
+        pieces = np.array([new_x, new_y])
+        return GameState(my_map, old_state.player, old_state.opponent, pieces.reshape((1, -1)))
 
 
 def check_king(my_map, x, y):
