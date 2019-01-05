@@ -7,15 +7,15 @@ class StateNode:
         self.parent = parent
         self.actions = []
         self.state = game_state
-        self.player = state.player
-        self.gameover = game_mcts.game_over(self.state.map)
+        self.player = self.state.player
+        self.gameover = game_mcts.game_over(self.state.my_map)
 
     def is_leaf(self):
         return true if len(actions) == 0 else false
 
     def init_children(self, prior):
 
-        assert(len(self.action) == 0), "The actions have been initialized!"
+        assert(len(self.actions) == 0), "The actions have been initialized!"
 
         # find all pieces of the current player
         pieces = self.state.pieces
@@ -27,7 +27,7 @@ class StateNode:
             # add action
             for move in moves:
                 out_state = game_mcts.move_piece(self.state.map, x, y, move)
-                action = ActionNode(self, [x, y], move, prior[x, y, move[0]))
+                action = ActionNode(self, [x, y], move, prior[x, y, move[0]])
                 out_node = StateNode(action, out_state)
                 action.set_child(out_node)
                 self.actions.append(action)
@@ -46,9 +46,13 @@ class StateNode:
 
         return [self.actions[i].out_node for i in len(actions)]
 
-    def best_children(self):
+    def best_children(self, determinstic=True):
+        Stats_N = [action.stats["N"] for action in self.actions]
 
-        ind = np.argmax([action.stats["N"] for action in self.actions])
+        if determinstic:
+            ind = np.argmax(Stats_N)
+        else: # stochastic
+            ind = np.random.choice(len(Stats_N), p=Stats_N)
 
         return self.actions[ind]
 
@@ -101,7 +105,7 @@ class MCTS:
 
         while not curr_node.is_leaf():
 
-            if len(action) > max_iter or curr_node.gameover != 0:
+            if len(actions) > max_iter or curr_node.gameover != 0:
                 break
 
             max_val, max_action = -np.inf, None
@@ -121,9 +125,9 @@ class MCTS:
 
         curr_input = [ curr_node.map.array,                         # current game map
                        curr_node.get_movable_pieces(),              # piece mask map
-                       np.ones((8, 8)) * curr_node.player.mask]     # player map
+                       np.ones((8, 8)) * curr_node.player.mark]     # player map
 
-        prior, value = net(np.array(curr_input))
+        value, prior = net(np.array(curr_input))
 
         curr_node.init_children(prior)
         self.num_node += len(curr_node.actions)
@@ -133,4 +137,4 @@ class MCTS:
             action.stats['N'] += 1
             action.stats['W'] += value
             action.stats['Q'] = action.stats['W'] / action.stats['N']
-        
+

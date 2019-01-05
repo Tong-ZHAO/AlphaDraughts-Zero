@@ -3,7 +3,7 @@ import torch.nn as nn
 import config
 from utils import *
 
-in_channels = 1
+in_channels = 3 # game (map), mask, current player indicator
 map_size = (8, 8)
 
 # class to be used
@@ -14,6 +14,9 @@ class CNN_Net(nn.Module):
 		self.residual_blocks = self.__make_residual_blocks()
 		self.value_head = Value_head()
 		self.policy_head = Policy_head()
+		self.logger = build_logger("model", config.file2write)
+		self.message("Number of trainable parameters is " + \
+			str(self.number_of_trainable_parameters()))
 
 
 	def forward(self, x):
@@ -33,6 +36,18 @@ class CNN_Net(nn.Module):
 
 	def number_of_trainable_parameters(self):
 		return sum([x.numel() for x in self.parameters() if x.requires_grad])
+
+	def visualize_model(self):
+		example_input = torch.randn((5, 3, 8, 8))
+		values, policies = model(example_input)
+
+		self.message("Value head output shape: " + str(values.shape))
+		self.message("Policy head output shape: " + str(policies.shape))
+		self.message(model)
+
+	def message(self, mess):
+		self.logger.info(mess)
+		print(mess)
 
 
 class Policy_head(nn.Module):
@@ -143,12 +158,4 @@ def conv3x3(in_channels):
 
 if __name__ == "__main__":
 	model = CNN_Net()
-	example_input = torch.randn((5, 1, 8, 8))
-	values, policies = model(example_input)
-
-	logger = build_logger("model")
-	logger.info("Number of trainable parameters: " +\
-			    str(model.number_of_trainable_parameters()))
-	logger.info(values.shape)
-	logger.info(policies.shape)
-	logger.info(model)
+	model.visualize_model()

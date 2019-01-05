@@ -15,13 +15,13 @@ coor_matrix = [[-1, -1], # NorthWest
 class Map:
 
     def __init__(self, init_map = None):
-        self.map = np.zeros((8, 8)) if map is None else init_map
+        self.map = np.zeros((8, 8)) if init_map is None else init_map
 
-    def __getitem(self, x, y):
-        return self.map(x, y)
+    def __getitem__(self, x, y):
+        return self.map[x, y]
 
-    def __setitem__(self, x, y, value):
-        self.map(x, y) = value
+    def set_piece(self, x, y, value):
+        self.map[x, y] = value
 
     def __repr__(self):
         return 'Map\n' + np.array2string(self.map)
@@ -95,15 +95,15 @@ def move_piece(old_state, curr_x, curr_y, move):
 
     if move[1] == True:
         new_x, new_y = curr_x + 2 * step_x, curr_y + 2 * step_y
-        my_map(curr_x + step_x, curr_x + step_y) = 0
+        my_map[curr_x + step_x, curr_x + step_y] = 0
     else:
         new_x, new_y = curr_x + step_x, curr_y + step_y
             
-    my_map(new_x, new_y) = my_map(curr_x, curr_y)
-    my_map(curr_x, curr_y) = 0
+    my_map[new_x, new_y] = my_map[curr_x, curr_y]
+    my_map[curr_x, curr_y] = 0
 
     val, flag = check_king(my_map, new_x, new_y)
-    my_map(new_x, new_y) = val
+    my_map[new_x, new_y] = val
 
     if move[2] or flag:
         return GameState(my_map, old_state.opponent, old_state.player)
@@ -124,7 +124,7 @@ def check_king(my_map, x, y):
         return mark, False
 
 
-def game_over(map)
+def game_over(map):
 
     num_white = map.num_pieces(True)
     num_black = map.num_pieces(False)
@@ -162,8 +162,9 @@ def game_over(map)
 
 def find_possible_pathes(map, mark, curr_x, curr_y):
 
-    piece = map(curr_x, curr_y) 
+    piece = map[curr_x, curr_y]
     assert(mark * piece > 0), "Illegal Position"
+    piece = 1
 
     moves = []
     pathes, flags_eat, flags_inv = [], [], []
@@ -174,7 +175,7 @@ def find_possible_pathes(map, mark, curr_x, curr_y):
     else:
         moves = [NORTHWEST, NORTHEAST]
 
-    for move in Move:
+    for move in Moves:
         path = is_possible_path(map, mark, curr_x, curr_y, move)
         if path[0] != FINISH:
             pathes.append(path)

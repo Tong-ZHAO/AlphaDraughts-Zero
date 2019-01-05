@@ -1,84 +1,57 @@
 import argparse
 import torch
 import torch.optim as optim
-from model import CNN_Net
 from utils import *
 import config
 import os, time, datetime
+from pipeline import Pipeline
+from model import CNN_Net
 
-def train(epoch):
-    model.train()
-    for batch_idx, (data, target) in enumerate(dataset):
-        if use_cuda:
-            data, target = data.cuda(), target.cuda()
-
-        optimizer.zero_grad()
-		values, policies = model(data)
-		cross_entropy = torch.nn.CrossEntropyLoss(reduction='elementwise_mean')
-		mse = torch.nn.MSELoss()
-		loss = mse(values, target_values) + cross_entropy(policies, target_policies)
-		loss.backward()
-		optimizer.step()
+def message(mess):
+	logger.info(mess)
+	print(mess)
 
 t0 = time.time()
 
 parser = argparse.ArgumentParser(description='Training of AlphaDraughts Zero')
 
-parser.add_argument('--epochs', type=int, default=10, metavar='N',
-                    help='number of epochs to train (default: 10)')
-parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+parser.add_argument('--iterations', type=int, default=config.nb_iter_training, metavar='N',
+                    help='number of iterations of pipeline training)')
+parser.add_argument('--lr', type=float, default=config.lr, metavar='LR',
                     help='learning rate (default: 0.01)')
-parser.add_argument('--seed', type=int, default=42, metavar='S',
+parser.add_argument('--seed', type=int, default=config.random_seed, metavar='S',
                     help='random seed (default: 42)')
 
 args = parser.parse_args()
 torch.manual_seed(args.seed)
 use_cuda = torch.cuda.is_available()
-logger = build_logger("train")
 
-checkpoints_directory = "../checkpoints"
-if not os.path.exists(log_directory):
-	os.makedirs(log_directory)
+logger = build_logger("train", config.file2write)
 
 model = CNN_Net()
 
 if use_cuda:
 	model.cuda()
-	logger.info("Using GPU")
-    print('Using GPU')
+	message("Using GPU")
 else:
-	logger.info("Using CPU")
-    print('Using CPU')
+	message("Using CPU")
 
-c = 0.01 # L2 regularization coefficient
+c = 10e-4 # L2 regularization coefficient
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=c)
+pipeline = Pipeline(model, optimizer, config.dataset_max_size, config.resignation_threshold)
 
-logger.info("Training begins")
+message("Training begins.")
 
 try:
-	for epoch in range(1, args.epochs + 1):
-	    train(epoch)
-	    logger.info("model_" + str(epoch))
-	    file_path = os.path.join(checkpoints_directory, "model_" + str(epoch) + ".pth")
+	pipeline.train(args.iterations)
 except KeyboardInterrupt:
-	torch.save(model.state_dict(), file_path)
-	logger.info("Latest model saved to " + checkpoints_directory)
-	logger.info("Keyboard interruption after %.4f s." % (time.time() - t0))
+	message("Keyboard interruption after %.4f s." % (time.time() - t0))
+	pipeline.save_model()
 else:
-	torch.save(model.state_dict(), file_path)
-	logger.info("Latest model saved to " + checkpoints_directory)
-	logger.info("Training done in %.4f s." % (time.time() - t0))
+	message("Training done in %.4f s." % (time.time() - t0))
+	pipeline.save_model()
 
-logger.info("Training finished at " + datetime.datetime.now())
+message("Training finished.")
 
-'''
-One step of training:
 
-optimizer.zero_grad()
-values, policies = model(data)
-cross_entropy = torch.nn.CrossEntropyLoss(reduction='elementwise_mean')
-mse = torch.nn.MSELoss()
-loss = mse(values, target_values) + cross_entropy(policies, target_policies)
-loss.backward()
-optimizer.step()
-'''
+
