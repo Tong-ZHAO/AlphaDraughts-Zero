@@ -92,9 +92,9 @@ class Pipeline():
 		'''
 		buff = [] # buffer of data tuples
 		z = 0
+		current_state_node = self.best_mcts.root
 		while z == 0:
 			# move one step
-			current_state_node = self.best_mcts.root
 			action_node = current_state_node.best_children(determinstic=False)
 			game_state = move_piece(game_state, 
 									action_node.x, 
