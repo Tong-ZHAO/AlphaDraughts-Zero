@@ -5,12 +5,21 @@ import config
 import pickle
 import os
 import torch
+import sys
+
+try:
+	import asyncio
+except:
+	print("Only Python 3.4 or later is supported by asynchronous IO for data generation.")
 
 class Pipeline():
 	'''
 	Self-play training pipeline
 	'''
-	def __init__(self, model, optimizer, dataset_max_size, resignation_threshold):
+	def __init__(self, model, optimizer, 
+				 dataset_max_size, 
+				 resignation_threshold, 
+				 asycio_data_generation=True):
 		self.best_mcts = MCTS(StateNode(None, init_game()), 1) # best player to generate data
 		self.dataset = GameDataset(dataset_max_size)
 		self.resignation_threshold = resignation_threshold # not used for now
@@ -22,6 +31,7 @@ class Pipeline():
 			os.makedirs(self.checkpoints_directory)
 
 		self.optimizer = optimizer
+		self.asycio_data_generation = asycio_data_generation # Python >= 3.4 
 
 
 	def train(self, nb_iter):
@@ -36,11 +46,9 @@ class Pipeline():
 				self.update_best_mcts(mcts)
 			elif iter_ == 1:
 				self.best_mcts = mcts
-			
 
 			# Self-play
-			for _ in range(config.nb_self_play_in_each_iteration):
-				self.self_play_one_game()
+			self.self_play(config.nb_self_play_in_each_iteration)
 
 			# training of ConvNet
 			self.message("training of ConvNet")
@@ -84,9 +92,22 @@ class Pipeline():
 		if iter_ is not None and nb_iter is not None:
 			self.message("Latest model saved as " + file_path_model \
 				+ " (Iteration: " + str(iter_) + "/" + str(nb_iter) + ")")
+
+	def self_play(self, nb_self_play_in_each_iteration):
+		if not self.asycio_data_generation:
+			for _ in range(nb_self_play_in_each_iteration):
+				self.self_play_one_game_sync()
+		else:
+			loop = asyncio.get_event_loop()
+			tasks = [hello(), hello()]
+			tasks = []
+			for _ in range(nb_self_play_in_each_iteration):
+				tasks.append(self.self_play_one_game_async())
+			loop.run_until_complete(asyncio.wait(tasks))
+			loop.close()
 			
 
-	def self_play_one_game(self):
+	def self_play_one_game_sync(self):
 		'''
 		self-play to generate dataset
 		'''
@@ -120,6 +141,45 @@ class Pipeline():
 		# save to disk
 		for i in range(len(buff)):
 			self.dataset.append(buff[i])
+		
+		self.message("self-play game length = " + str(len(buff)) \
+			+ ", current dataset size = " + str(len(self.dataset)))
+
+	@asyncio.coroutine
+	def self_play_one_game_async(self):
+		'''
+		self-play to generate dataset
+		'''
+		buff = [] # buffer of data tuples
+		z = 0
+		current_state_node = self.best_mcts.root
+		while z == 0:
+			# move one step
+			action_node = current_state_node.best_children(determinstic=False)
+			game_state = move_piece(game_state, 
+									action_node.x, 
+									action_node.y, 
+									action_node.action)
+
+			# collect data
+			search_policy = current_state_node.get_policy()
+			z = game_over(game_state.my_map)
+			current_player = current_state_node.player.mark
+			buff.append(Data(current_state_node, 
+							   search_policy,
+							   z,
+							   current_player))
+			
+			# move to next state node
+			current_state_node = action_node.out_node
+		
+		# update the outcome of each data tuple (map, policy, outcome)
+		for i in range(len(buff)):
+			buff[i].outcome = z * buff[i].current_player
+
+		# save to disk
+		for i in range(len(buff)):
+			yield from self.dataset.append(buff[i])
 		
 		self.message("self-play game length = " + str(len(buff)) \
 			+ ", current dataset size = " + str(len(self.dataset)))

@@ -5,7 +5,7 @@ This repository is the final project for *Reinforcement Learning - M2 MVA 2018*.
 ## Requirements
 
 * Linux or macOS
-* Python 3
+* Python 3, version 3.4 or later is preferred
 * PyTorch 0.4
 * CPU or NVIDIA GPU + CUDA CuDNN
 
