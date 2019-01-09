@@ -3,6 +3,7 @@ import os
 from torch.utils.data import Dataset
 import numpy as np
 import pickle
+import torch
 
 '''
 Example:
@@ -117,6 +118,14 @@ class GameDataset(Dataset):
 			file_list = [f for f in os.listdir(self.root_dir) if f.endswith(".bak")]
 			for f in file_list:
 				os.remove(os.path.join(self.root_dir, f))
+
+
+def cross_entropy_continuous_target(prediction, target):
+	'''
+	both prediction & target of shape (batch_size, nb_classes)
+	'''
+	logsoftmax = torch.nn.LogSoftmax()
+	return torch.mean(torch.sum(- target * logsoftmax(prediction), dim=1))
 
 
 

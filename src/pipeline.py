@@ -74,9 +74,9 @@ class Pipeline():
 
 			self.optimizer.zero_grad()
 			value, policy = self.model(state)
-			cross_entropy = torch.nn.CrossEntropyLoss(reduction='elementwise_mean')
 			mse = torch.nn.MSELoss()
-			loss = mse(value, target_value) + cross_entropy(policy, target_policy)
+			loss = mse(value, target_value) + \
+				   cross_entropy_continuous_target(policy, target_policy)
 			loss.backward()
 			self.optimizer.step()
 
