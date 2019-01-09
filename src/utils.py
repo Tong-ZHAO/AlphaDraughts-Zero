@@ -70,7 +70,7 @@ class Fifo():
 
 class Data():
 	def __init__(self, curr_node, search_policy, outcome, current_player):
-		self.state = np.array([curr_node.map.array,                         
+		self.state = np.array([curr_node.state.my_map.array,                         
 							   curr_node.get_movable_pieces(),              
 							   np.ones((8, 8)) * curr_node.player.mark]) # tensor 8x8x3
 		self.policy = search_policy # array
@@ -91,17 +91,18 @@ class GameDataset(Dataset):
 		if init_dataset:
 			self.clear()
 		
-
 	def __len__(self):
 		return self.current_size
 
 	def __getitem__(self, idx):
 		file_path = os.path.join(self.root_dir, str(idx) + ".pkl")
 		with open(file_path, 'rb') as f:
-			return pickle.load(f)
+			my_data = pickle.load(f)
+		return my_data.state.astype(float), my_data.policy.astype(float), float(my_data.outcome), float(my_data.current_player)
+
 
 	def append(self, data):
-		with open(str(self.cursor) + ".pkl", "wb") as f:
+		with open(os.path.join(self.root_dir, str(self.cursor) + ".pkl"), "wb") as f:
 			pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 		if self.cursor == self.max_size - 1:

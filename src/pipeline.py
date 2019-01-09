@@ -1,5 +1,5 @@
 from mcts import MCTS, StateNode
-from game_mcts import init_game, game_over
+from game_mcts import init_game, game_over, move_piece
 from utils import *
 import config
 import pickle
@@ -55,7 +55,7 @@ class Pipeline():
 			train_loader = torch.utils.data.DataLoader(self.dataset,
 				batch_size=config.batch_size, shuffle=True, num_workers=1)
 
-			for epoch in config.nb_epochs_per_iteration:
+			for epoch in range(config.nb_epochs_per_iteration):
 				self.train_net_for_one_epoch(train_loader, epoch, iter_)
 
 			if iter_ % config.freq_iter_checkpoint == 0:
@@ -63,9 +63,10 @@ class Pipeline():
 
 
 
-	def train_net_for_one_epoch(train_loader, epoch, iter_):
+	def train_net_for_one_epoch(self, train_loader, epoch, iter_):
 		self.model.train()
 		for batch_idx, (state, target_policy, target_value, dummy) in enumerate(train_loader):
+			state, target_policy, target_value = state.float(), target_policy.float(), target_value.float()
 			if torch.cuda.is_available():
 				state = state.cuda()
 				target_policy = target_policy.reshape((1, - 1)).cuda()
@@ -99,7 +100,7 @@ class Pipeline():
 				self.self_play_one_game_sync()
 		else:
 			loop = asyncio.get_event_loop()
-			tasks = [hello(), hello()]
+			#tasks = [hello(), hello()]
 			tasks = []
 			for _ in range(nb_self_play_in_each_iteration):
 				tasks.append(self.self_play_one_game_async())
@@ -114,18 +115,18 @@ class Pipeline():
 		buff = [] # buffer of data tuples
 		z = 0
 		current_state_node = self.best_mcts.root
-		while z == 0:
+		while z == 0 and not current_state_node.is_leaf():
 			# move one step
-			action_node = current_state_node.best_children(determinstic=False)
-			game_state = move_piece(game_state, 
-									action_node.x, 
-									action_node.y, 
-									action_node.action)
+			action_node = current_state_node.best_children(determinstic = True)
+			#game_state = move_piece(current_state_node.state, 
+			#						action_node.x, 
+			#						action_node.y, 
+			#						action_node.action)
 
 			# collect data
 			search_policy = current_state_node.get_policy()
-			z = game_over(game_state.my_map)
-			current_player = current_state_node.player.mark
+			z = action_node.out_node.gameover
+			current_player = action_node.player.mark
 			buff.append(Data(current_state_node, 
 							   search_policy,
 							   z,
@@ -153,18 +154,18 @@ class Pipeline():
 		buff = [] # buffer of data tuples
 		z = 0
 		current_state_node = self.best_mcts.root
-		while z == 0:
+		while z == 0 and not current_state_node.is_leaf():
 			# move one step
-			action_node = current_state_node.best_children(determinstic=False)
-			game_state = move_piece(game_state, 
-									action_node.x, 
-									action_node.y, 
-									action_node.action)
+			action_node = current_state_node.best_children(determinstic = True)
+			#game_state = move_piece(current_state_node.state, 
+			#						action_node.x, 
+			#						action_node.y, 
+			#						action_node.action)
 
 			# collect data
 			search_policy = current_state_node.get_policy()
-			z = game_over(game_state.my_map)
-			current_player = current_state_node.player.mark
+			z = action_node.out_node.gameover
+			current_player = action_node.player.mark
 			buff.append(Data(current_state_node, 
 							   search_policy,
 							   z,
@@ -179,7 +180,9 @@ class Pipeline():
 
 		# save to disk
 		for i in range(len(buff)):
-			yield from self.dataset.append(buff[i])
+			for data in buff:
+				self.dataset.append(data)
+			#yield from self.dataset.append(buff[i])
 		
 		self.message("self-play game length = " + str(len(buff)) \
 			+ ", current dataset size = " + str(len(self.dataset)))

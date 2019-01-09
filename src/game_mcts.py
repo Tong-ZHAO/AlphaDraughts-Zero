@@ -164,7 +164,6 @@ def find_possible_pathes(map, mark, curr_x, curr_y, flag_eat):
 
     piece = map[curr_x, curr_y]
     assert(mark * piece > 0), "Illegal Position"
-    piece = 1
 
     moves = []
     pathes, flags_eat, flags_inv = [], [], []

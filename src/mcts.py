@@ -50,13 +50,14 @@ class StateNode:
 
         return [self.actions[i].out_node for i in len(actions)]
 
-    def best_children(self, determinstic=True):
-        Stats_N = [action.stats["N"] for action in self.actions]
+    def best_children(self, determinstic = True):
+        Stats_N = np.array([float(action.stats["N"]) for action in self.actions])
 
         if determinstic:
             ind = np.argmax(Stats_N)
-        else: # stochastic
-            ind = np.random.choice(len(Stats_N), p=Stats_N)
+        else: # stochastici
+            print(Stats_N)
+            ind = np.random.choice(len(Stats_N), p = Stats_N / Stats_N.sum())
 
         return self.actions[ind]
 
@@ -65,7 +66,7 @@ class StateNode:
         policy = np.zeros((8, 8, 4))
 
         for action in self.actions:
-            policy[action.x, action.y, action.move[0]] = action.stats["N"]
+            policy[action.x, action.y, action.action[0]] = action.stats["N"]
 
         return policy / policy.sum()
 
