@@ -1,5 +1,6 @@
 import numpy as np
 import game_mcts
+import torch
 
 class StateNode:
 
@@ -11,22 +12,25 @@ class StateNode:
         self.gameover = game_mcts.game_over(self.state.my_map)
 
     def is_leaf(self):
-        return true if len(actions) == 0 else false
+        return True if len(self.actions) == 0 else False
 
     def init_children(self, prior):
+
+        prior = prior.detach().cpu().numpy().reshape((8, 8, 4))
 
         assert(len(self.actions) == 0), "The actions have been initialized!"
 
         # find all pieces of the current player
         pieces = self.state.pieces
+        flag_eat = True if (self.parent and self.parent.action[-1] == False) else False
         # find possible moves for the player
         for i in range(len(pieces)):
             x, y = pieces[i, 0], pieces[i, 1]
-            moves = game_mcts.find_possible_pathes(self.state.map, self.state.player.mark, x, y)
+            moves = game_mcts.find_possible_pathes(self.state.my_map, self.state.player.mark, x, y, flag_eat)
 
             # add action
             for move in moves:
-                out_state = game_mcts.move_piece(self.state.map, x, y, move)
+                out_state = game_mcts.move_piece(self.state, x, y, move)
                 action = ActionNode(self, [x, y], move, prior[x, y, move[0]])
                 out_node = StateNode(action, out_state)
                 action.set_child(out_node)
@@ -97,6 +101,7 @@ class MCTS:
         self.root = root
         self.num_node = 1
         self.cpuct = cpuct
+        self.use_cuda = torch.cuda.is_available()
 
     def move_to_leaf(self, net, max_iter):
 
@@ -113,7 +118,7 @@ class MCTS:
 
             for action in curr_node.actions:
 
-                N, W, Q, P = action.stats
+                N, W, Q, P = action.stats['N'], action.stats['W'], action.stats['Q'], action.stats['P'],
                 U = Q + self.cpuct * P * np.sqrt(N_sum) / (1 + N)
 
                 if action.stats['Q'] + U > max_val:
@@ -123,11 +128,16 @@ class MCTS:
             actions.append(max_action)
             curr_node = max_action.out_node
 
-        curr_input = [ curr_node.map.array,                         # current game map
+        curr_input = [ curr_node.state.my_map.array,                # current game map
                        curr_node.get_movable_pieces(),              # piece mask map
                        np.ones((8, 8)) * curr_node.player.mark]     # player map
 
-        value, prior = net(np.array(curr_input))
+        curr_input = torch.from_numpy(np.expand_dims(np.stack(curr_input, axis = 0), axis = 0)).float()
+
+        if self.use_cuda:
+            curr_input = curr_input.cuda()
+
+        value, prior = net(curr_input)
 
         curr_node.init_children(prior)
         self.num_node += len(curr_node.actions)

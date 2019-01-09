@@ -199,7 +199,7 @@ class Pipeline():
 		self.best_mcts = mcts
 
 	def message(self, mess):
-		self.logger(mess)
+		self.logger.info(mess)
 		print(mess)
 
 

@@ -17,7 +17,7 @@ logger.info(".......")
 def build_logger(name, file2write):
 	log_directory = "../logs"
 	if not os.path.exists(log_directory):
-			os.makedirs(log_directory)
+		os.makedirs(log_directory)
 	file_path = os.path.join(log_directory, file2write + ".txt")
 
 	logger = logging.getLogger(name)

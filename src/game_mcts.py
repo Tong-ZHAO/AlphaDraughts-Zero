@@ -17,11 +17,11 @@ class Map:
     def __init__(self, init_map = None):
         self.map = np.zeros((8, 8)) if init_map is None else init_map
 
-    def __getitem__(self, x, y):
-        return self.map[x, y]
+    def __getitem__(self, tup):
+        return self.map[tup[0], tup[1]]
 
-    def set_piece(self, x, y, value):
-        self.map[x, y] = value
+    def __setitem__(self, tup, value):
+        self.map[tup[0], tup[1]] = value
 
     def __repr__(self):
         return 'Map\n' + np.array2string(self.map)
@@ -59,7 +59,7 @@ class Player:
         for row in rows:
             cols = [0, 2, 4, 6] if row % 2 == 1 else [1, 3, 5, 7]
             for col in cols:
-                map.set_piece(row, col, self.mark)
+                map[row, col] = self.mark
 
 
 class GameState:
@@ -95,7 +95,7 @@ def move_piece(old_state, curr_x, curr_y, move):
 
     if move[1] == True:
         new_x, new_y = curr_x + 2 * step_x, curr_y + 2 * step_y
-        my_map[curr_x + step_x, curr_x + step_y] = 0
+        my_map[curr_x + step_x, curr_y + step_y] = 0
     else:
         new_x, new_y = curr_x + step_x, curr_y + step_y
             
@@ -114,7 +114,7 @@ def move_piece(old_state, curr_x, curr_y, move):
 
 def check_king(my_map, x, y):
 
-    mark = my_map(x, y)
+    mark = my_map[x, y]
 
     if x == 0 and mark == 1:
         return 2, True
@@ -138,7 +138,7 @@ def game_over(map):
     flag_white, flag_black = False, False
 
     for piece in pieces_white:
-        pathes = find_possible_pathes(map, 1, piece[0], piece[1])
+        pathes = find_possible_pathes(map, 1, piece[0], piece[1], False)
         if len(pathes) > 0:
             flag_white = True
             break
@@ -147,7 +147,7 @@ def game_over(map):
     pieces_black = map.get_player_pieces(False)
 
     for piece in pieces_black:
-        pathes = find_possible_pathes(map, -1, piece[0], piece[1])
+        pathes = find_possible_pathes(map, -1, piece[0], piece[1], False)
         if len(pathes) > 0:
             flag_black = True
             break
@@ -160,7 +160,7 @@ def game_over(map):
         return -1
 
 
-def find_possible_pathes(map, mark, curr_x, curr_y):
+def find_possible_pathes(map, mark, curr_x, curr_y, flag_eat):
 
     piece = map[curr_x, curr_y]
     assert(mark * piece > 0), "Illegal Position"
@@ -176,7 +176,7 @@ def find_possible_pathes(map, mark, curr_x, curr_y):
         moves = [NORTHWEST, NORTHEAST]
 
     for move in Moves:
-        path = is_possible_path(map, mark, curr_x, curr_y, move)
+        path = is_possible_path(map, mark, curr_x, curr_y, move, flag_eat)
         if path[0] != FINISH:
             pathes.append(path)
 
@@ -191,17 +191,16 @@ def is_possible_path(map, mark, curr_x, curr_y, move, eat):
         flag_inv : whether we change the player
     """
 
-    mark = player.mark
     step_x, step_y = coor_matrix[move]
     new_x , new_y = curr_x + step_x, curr_y + step_y  
 
     # Handle Cases:
     #    1. Already reach the border
     #    2. The destination is taken by its teammate
-    if (new_x < 0) or (new_y < 0) or (new_x > 7) or (new_y > 7) or (map(new_x, new_y) * mark > 0):
+    if (new_x < 0) or (new_y < 0) or (new_x > 7) or (new_y > 7) or (map[new_x, new_y] * mark > 0):
         return [FINISH, False, True]
     # Handle Case: Available 1 step
-    elif self.map(new_x, new_y) == 0:
+    elif map[new_x, new_y] == 0:
         if eat:
             return [FINISH, False, True]
         else:
@@ -210,7 +209,7 @@ def is_possible_path(map, mark, curr_x, curr_y, move, eat):
     else:
         jump_x , jump_y = new_x + step_x, new_y + step_y
         # Handle Case: No available place
-        if (jump_x < 0) or (jump_y < 0) or (jump_x > 7) or (jump_y > 7) or map(jump_x, jump_y) != 0:
+        if (jump_x < 0) or (jump_y < 0) or (jump_x > 7) or (jump_y > 7) or map[jump_x, jump_y] != 0:
             return [FINISH, False, True]
         # Jump, update the map, and find following possible move
         else:
