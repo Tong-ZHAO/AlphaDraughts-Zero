@@ -20,7 +20,7 @@ class Pipeline():
 				 dataset_max_size, 
 				 resignation_threshold, 
 				 asycio_data_generation=True):
-		self.best_mcts = MCTS(StateNode(None, init_game()), 1) # best player to generate data
+		self.best_mcts = MCTS(StateNode(None, init_game()), config.cpuct) # best player to generate data
 		self.dataset = GameDataset(dataset_max_size)
 		self.resignation_threshold = resignation_threshold # not used for now
 		self.model = model
@@ -69,7 +69,7 @@ class Pipeline():
 			state, target_policy, target_value = state.float(), target_policy.float(), target_value.float()
 			if torch.cuda.is_available():
 				state = state.cuda()
-				target_policy = target_policy.reshape((1, - 1)).cuda()
+				target_policy = target_policy.reshape((-1, 256)).cuda()
 				target_value = target_value.cuda()
 
 			self.optimizer.zero_grad()
@@ -81,8 +81,8 @@ class Pipeline():
 			self.optimizer.step()
 
 			if batch_idx % config.train_net_log_interval == 0:
-				mess = "ConvNet train iteraion %d epoch %d (%d / %d) / %d (%.4f)%, loss: %.4f" \
-					% (iter_, epoch, batch_idx * len(data), len(train_loader.dataset), \
+				mess = "ConvNet train iteraion %d epoch %d (%d / %d) / (%.4f), loss: %.4f" \
+					% (iter_, epoch, batch_idx * len(state), len(train_loader.dataset), \
 						100. * batch_idx / len(train_loader), loss.data.item())
 				self.message(mess)
 
@@ -99,7 +99,7 @@ class Pipeline():
 			for _ in range(nb_self_play_in_each_iteration):
 				self.self_play_one_game_sync()
 		else:
-			loop = asyncio.get_event_loop()
+			loop = asyncio.new_event_loop()
 			#tasks = [hello(), hello()]
 			tasks = []
 			for _ in range(nb_self_play_in_each_iteration):
@@ -189,7 +189,7 @@ class Pipeline():
 
 	def build_new_mcts(self, model):
 		game_state = init_game()
-		mcts = MCTS(StateNode(None, game_state), 1)
+		mcts = MCTS(StateNode(None, game_state), config.cpuct)
 
 		# Simulation of MCTS
 		for _ in range(config.nb_simulations):

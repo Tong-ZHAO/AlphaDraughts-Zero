@@ -140,12 +140,12 @@ class MCTS:
 
         value, prior = net(curr_input)
 
-        curr_node.init_children(prior)
-        self.num_node += len(curr_node.actions)
+        if curr_node.is_leaf():
+            curr_node.init_children(prior)
+            self.num_node += len(curr_node.actions)
 
         # update value for all passed actions
         for action in actions:
             action.stats['N'] += 1
             action.stats['W'] += value
             action.stats['Q'] = action.stats['W'] / action.stats['N']
-

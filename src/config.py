@@ -9,10 +9,11 @@ value_head_hidden_layer_size = 64 # number of hidden units in the hidden layer o
 nb_residual_blocks = 19 # number of residual blocks in the neural network architecture
 
 # MCTS parameters
-max_iter_move_to_leaf = 200 # one argument for mcts.move_to_leaf()
+max_iter_move_to_leaf = 300 # one argument for mcts.move_to_leaf()
+cpuct = 0.02 # exploration / exploitation
 
 # Training parameters
-lr = 0.01
+lr = 0.001
 random_seed = 42
 batch_size = 32
 nb_iter_training = 1000
@@ -21,7 +22,7 @@ nb_iter_training = 1000
 nb_epochs_per_iteration = 2 # Number of epochs of training of ConvNet in every iteration of pipeline
 dataset_max_size = 5000 # Maximum number of kept self-play records, 500000 in AlphaGo Zero
 resignation_threshold = - 0.2 # Resignation if the estimated value is lower than this threshold
-nb_simulations = 1000 # Number of simulations for MCTS
+nb_simulations = 2000 # Number of simulations for MCTS
 nb_self_play_in_each_iteration = 3 # Number of self-play games in each iteration of training, 25000 in AlphaGo Zero
 freq_iter_checkpoint = 10 # Frequency of saving checkpoint by iteration, 1000 in AlphaGo Zero's paper
 freq_update_best_mcts = 1 # Frequency of updating the best player so far, 1000 in AlphaGo Zero

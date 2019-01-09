@@ -126,9 +126,3 @@ def cross_entropy_continuous_target(prediction, target):
 	'''
 	logsoftmax = torch.nn.LogSoftmax()
 	return torch.mean(torch.sum(- target * logsoftmax(prediction), dim=1))
-
-
-
-
-
-
