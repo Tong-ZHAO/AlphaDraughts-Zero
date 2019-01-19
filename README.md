@@ -6,7 +6,7 @@ This repository is the final project for *Reinforcement Learning - M2 MVA 2018*.
 
 * Linux or macOS
 * Python 3, version 3.4 or later is preferred
-* PyTorch 0.4
+* PyTorch 1.0
 * CPU or NVIDIA GPU + CUDA CuDNN
 
 Run `pip install -r requirements.txt` to install dependencies.

@@ -105,3 +105,9 @@ venv.bak/
 
 # log files
 logs/*
+
+# checkpoint files
+checkpoints/*
+
+# dataset files
+dataset/*

@@ -67,9 +67,10 @@ class Pipeline():
 		self.model.train()
 		for batch_idx, (state, target_policy, target_value, dummy) in enumerate(train_loader):
 			state, target_policy, target_value = state.float(), target_policy.float(), target_value.float()
+			target_policy = target_policy.reshape((-1, 256))
 			if torch.cuda.is_available():
 				state = state.cuda()
-				target_policy = target_policy.reshape((-1, 256)).cuda()
+				target_policy = target_policy.cuda()
 				target_value = target_value.cuda()
 
 			self.optimizer.zero_grad()
