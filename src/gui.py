@@ -6,7 +6,7 @@ def change_idx(idx):
     else:
         return 0
 
-def init_pieces(pieces):
+def init_pieces():
 
     rows = [5, 6, 7] #[0, 1 ,2]
 
@@ -41,6 +41,7 @@ def draw_pieces():
         pg.draw.circle(surface, piece_colors[color_idx], piece_center, piece_radius)
 
 def update_surface():
+    draw_background()
     draw_pieces()
 
 
@@ -51,14 +52,13 @@ square_colors = [pg.Color('gray'), pg.Color('salmon')]
 piece_colors = [pg.Color('black'), pg.Color('white')]
 
 pieces = {} # every piece is a dict obj (x location, y location)-->(color index)
-init_pieces(pieces)
+init_pieces()
 
 
 pg.init()
 screen = pg.display.set_mode((screen_size, screen_size))
 surface = pg.Surface((screen_size, screen_size))
 clock = pg.time.Clock()
-draw_background()
 
 
 running = True
@@ -69,9 +69,17 @@ while running:
         elif event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1: # left click of mouse
                 mouse_x, mouse_y = event.pos
-                print(mouse_x, mouse_y)
-                color_idx = 1
-                pieces[(mouse_x, mouse_y)] = color_idx
+                
+                row = int(mouse_x / square_size)
+                col = int(mouse_y / square_size)
+                row_ = piece_radius + row * square_size
+                col_ = piece_radius + col * square_size
+
+                print(row_, col_)
+                if (row_, col_) in pieces:
+                    pieces.pop((row_, col_), None)
+                else:
+                    pieces[(row_, col_)] = 0
 
     update_surface()
     screen.blit(surface, (0, 0))
