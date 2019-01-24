@@ -16,7 +16,7 @@ class StateNode:
 
     def init_children(self, prior):
 
-        prior = prior.detach().cpu().numpy().reshape((8, 8, 4))
+        prior = prior.reshape((8, 8, 4))
 
         assert(len(self.actions) == 0), "The actions have been initialized!"
 
@@ -35,6 +35,11 @@ class StateNode:
                 out_node = StateNode(action, out_state)
                 action.set_child(out_node)
                 self.actions.append(action)
+
+        # Handle case: no other piece to eat, change player
+        if len(self.actions) == 0 and len(pieces) == 1 and self.gameover == 0:
+            self.state = game_mcts.GameState(self.state.my_map, self.state.opponent, self.state.player)
+            self.player = self.state.player
 
     def get_movable_pieces(self):
 
@@ -56,7 +61,7 @@ class StateNode:
         if determinstic:
             ind = np.argmax(Stats_N)
         else: # stochastici
-            print(Stats_N)
+            #print(Stats_N)
             ind = np.random.choice(len(Stats_N), p = Stats_N / Stats_N.sum())
 
         return self.actions[ind]
@@ -67,6 +72,9 @@ class StateNode:
 
         for action in self.actions:
             policy[action.x, action.y, action.action[0]] = action.stats["N"]
+
+        if policy.sum() == 0:
+            return policy
 
         return policy / policy.sum()
 
@@ -134,18 +142,20 @@ class MCTS:
                        np.ones((8, 8)) * curr_node.player.mark]     # player map
 
         curr_input = torch.from_numpy(np.expand_dims(np.stack(curr_input, axis = 0), axis = 0)).float()
+        curr_input.requires_grad_(False)
 
         if self.use_cuda:
             curr_input = curr_input.cuda()
 
+        net.eval()
         value, prior = net(curr_input)
 
         if curr_node.is_leaf():
-            curr_node.init_children(prior)
+            curr_node.init_children(prior.cpu().detach().numpy())
             self.num_node += len(curr_node.actions)
 
         # update value for all passed actions
         for action in actions:
             action.stats['N'] += 1
-            action.stats['W'] += value
+            action.stats['W'] += value.data.cpu().numpy()[0]
             action.stats['Q'] = action.stats['W'] / action.stats['N']

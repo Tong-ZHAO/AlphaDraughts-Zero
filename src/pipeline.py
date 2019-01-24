@@ -65,6 +65,7 @@ class Pipeline():
 
 	def train_net_for_one_epoch(self, train_loader, epoch, iter_):
 		self.model.train()
+		
 		for batch_idx, (state, target_policy, target_value, dummy) in enumerate(train_loader):
 			state, target_policy, target_value = state.float(), target_policy.float(), target_value.float()
 			target_policy = target_policy.reshape((-1, 256))
@@ -88,7 +89,7 @@ class Pipeline():
 				self.message(mess)
 
 	def save_model(self, iter_=None, nb_iter=None):
-		file_path_model = os.path.join(self.checkpoints_directory, "latest_model.pth")
+		file_path_model = os.path.join(self.checkpoints_directory, "iter_" + str(iter_) + "/" + str(nb_iter) + "_model.pth")
 		torch.save(self.model.state_dict(), file_path_model)
 
 		if iter_ is not None and nb_iter is not None:
@@ -194,6 +195,7 @@ class Pipeline():
 
 		# Simulation of MCTS
 		for _ in range(config.nb_simulations):
+			#print("Build new mcts")
 			mcts.move_to_leaf(model, config.max_iter_move_to_leaf)
 		return mcts
 
