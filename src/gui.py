@@ -12,30 +12,40 @@ def change_idx(idx):
 
 def blingbling():
     begin_time = pg.time.get_ticks()
-    pg.font.init()
-    font = pg.font.Font("../fonts/wryh.ttf", 28)
-
+    x_star = []
+    y_star = []
+    for i in range(0, nb_stars):
+        x_star.append(np.random.randint(0,screen_size))
+        y_star.append(np.random.randint(0,screen_size))
     while True:
-        screen.fill(background_color)
+        screen.blit(surface, (0, 0))
 
         for event in pg.event.get():
-            if event.type == pg.QUIT:
+            if event.type == pg.QUIT: # quit application
                 sys.exit()
+            elif event.type == pg.MOUSEBUTTONDOWN: # quick quit animation
+                if event.button == 1: 
+                    return
         
         for i in range(len(x_star)):
             y_star[i] += 3
-            if y_star[i] > screen_size:
+            x_star[i] += np.random.randint(- 2, 2)
+            if y_star[i] >= screen_size:
                 y_star[i] = 0
+            if x_star[i] >= screen_size:
+                x_star[i] = screen_size - 1
+            elif x_star[i] < 0:
+                x_star[i] = 0
         
         for i in range(len(x_star)):
-            font_star = font.render("*", True, (np.random.randint(180, 255), 
-                                                np.random.randint(180, 255), 
+            font_star = font.render("*", True, (np.random.randint(125, 255), 
+                                                np.random.randint(125, 255), 
                                                 0))
             screen.blit(font_star, (x_star[i], y_star[i]))
 
         pg.display.flip()
         if pg.time.get_ticks() - begin_time > blingbling_milliseconds:
-            break
+            return
 
 
 def draw_background():
@@ -107,13 +117,10 @@ curr_pieces = game.pieces.tolist()
 my_row, my_col, possible_moves, possible_pieces = None, None, None, None
 
 # init stars
-nb_stars = 20
+nb_stars = 50
 blingbling_milliseconds = 1000
-x_star = []
-y_star = []
-for i in range(0, nb_stars):
-    x_star.append(np.random.randint(0,screen_size))
-    y_star.append(np.random.randint(0,screen_size))
+pg.font.init()
+font = pg.font.Font("../fonts/wryh.ttf", 1)
 
 
 pg.init()
