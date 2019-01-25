@@ -155,7 +155,7 @@ while running:
                     game = move_piece(game, my_row, my_col, possible_moves[possible_pieces.index([row, col])])
                     curr_pieces = game.pieces.tolist()
                     # jump
-                    if len(curr_pieces) == 1:
+                    if game.flag_eat == True:
                         my_row, my_col = curr_pieces[0]
                         possible_moves = find_possible_pathes(game.my_map, game.player.mark, my_row, my_col, True)
                         # no further move, change player
@@ -174,14 +174,15 @@ while running:
             if pressed[pg.K_w]:
                 blingbling()
 
-            if game_over(game.my_map):
-                print("Game Over")
-                break
-                text = font.render("Game Over", True, pg.Color('white'))
-                text_rect = text.get_rect()
-                text_x = screen.get_width() / 2 - text_rect.width / 2
-                text_y = screen.get_height() / 2 - text_rect.height / 2
-                screen.blit(text, [text_x, text_y])
+        if game_over(game.my_map):
+            print("Game Over")
+            break
+            text = font.render("Game Over", True, pg.Color('white'))
+            text_rect = text.get_rect()
+            text_x = screen.get_width() / 2 - text_rect.width / 2
+            text_y = screen.get_height() / 2 - text_rect.height / 2
+            screen.blit(text, [text_x, text_y])
+            
                 
                     
     update_surface()
