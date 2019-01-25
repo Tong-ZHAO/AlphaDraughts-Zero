@@ -19,18 +19,29 @@ def draw_background():
 
     pg.draw.rect(surface, background_color, (screen_size, 0, text_size, screen_size))
 
-def draw_pieces(game):
+def draw_pieces():
 
     pieces = game.my_map.get_player_pieces(True) # white
 
     for i in range(len(pieces)):
         y, x = pieces[i] * square_size + piece_radius
         pg.draw.circle(surface, piece_colors[0], (x, y), piece_radius)
+        if abs(game.my_map[pieces[i]]) == 2:
+            pg.draw.polygon(surface, piece_colors[4], [[x - piece_radius / 2, y],
+                                                    [x, y - piece_radius / 2],
+                                                    [x + piece_radius / 2, y],
+                                                    [x, y + piece_radius / 2]])
+
 
     pieces = game.my_map.get_player_pieces(False) # white
     for i in range(len(pieces)):
         y, x = pieces[i] * square_size + piece_radius
         pg.draw.circle(surface, piece_colors[1], (x, y), piece_radius)
+        if abs(game.my_map[pieces[i]]) == 2:
+            pg.draw.polygon(surface, piece_colors[5], [[x - piece_radius / 2, y],
+                                                    [x, y - piece_radius / 2],
+                                                    [x + piece_radius / 2, y],
+                                                    [x, y + piece_radius / 2]])
 
     movable_pieces = game.pieces
     for i in range(len(movable_pieces)):
@@ -46,7 +57,7 @@ def draw_move(coord, moves):
 
 def update_surface():
     draw_background()
-    draw_pieces(game)
+    draw_pieces()
 
 
 
@@ -56,9 +67,9 @@ piece_radius = int(square_size / 2)
 move_radius = int(piece_radius / 5)
 
 square_colors = [pg.Color('gray'), pg.Color('salmon')]
-piece_colors = [pg.Color('white'), pg.Color('black'), pg.Color('red'), pg.Color('yellow')]
+piece_colors = [pg.Color('white'), pg.Color('black'), pg.Color('red'), pg.Color('yellow'), pg.Color('black'), pg.Color('white')]
 background_color = pg.Color('#8EA2F3')
-
+king_img = pg.image.load("imgs/king.png")
 
 
 # init game
@@ -71,11 +82,12 @@ pg.init()
 screen = pg.display.set_mode((screen_size + text_size, screen_size))
 surface = pg.Surface((screen_size + text_size, screen_size))
 pg.display.set_caption('AlphaDraughts Zero')
+king_img = king_img.convert()
 clock = pg.time.Clock()
 font = pg.font.Font(None, 36)
 
 draw_background()
-draw_pieces(game)
+draw_pieces()
 
 
 running = True
