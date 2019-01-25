@@ -98,12 +98,14 @@ def move_piece(old_state, curr_x, curr_y, move):
         my_map[curr_x + step_x, curr_y + step_y] = 0
     else:
         new_x, new_y = curr_x + step_x, curr_y + step_y
-            
+
     my_map[new_x, new_y] = my_map[curr_x, curr_y]
     my_map[curr_x, curr_y] = 0
 
     val, flag = check_king(my_map, new_x, new_y)
     my_map[new_x, new_y] = val
+
+    
 
     if move[2] or flag:
         return GameState(my_map, old_state.opponent, old_state.player)
@@ -162,7 +164,7 @@ def game_over(map):
 
 def find_possible_pathes(map, mark, curr_x, curr_y, flag_eat):
 
-    piece = map[curr_x, curr_y]
+    piece = int(map[curr_x, curr_y])
     assert(mark * piece > 0), "Illegal Position"
 
     moves = []
@@ -174,7 +176,7 @@ def find_possible_pathes(map, mark, curr_x, curr_y, flag_eat):
     else:
         moves = [NORTHWEST, NORTHEAST]
 
-    for move in Moves:
+    for move in moves:
         path = is_possible_path(map, mark, curr_x, curr_y, move, flag_eat)
         if path[0] != FINISH:
             pathes.append(path)
