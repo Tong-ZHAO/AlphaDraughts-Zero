@@ -1,11 +1,41 @@
 import pygame as pg
 from game_mcts import *
+import numpy as np
+import sys
 
 def change_idx(idx):
     if idx == 0:
         return 1
     else:
         return 0
+
+
+def blingbling():
+    begin_time = pg.time.get_ticks()
+    pg.font.init()
+    font = pg.font.Font("../fonts/wryh.ttf", 28)
+
+    while True:
+        screen.fill(background_color)
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                sys.exit()
+        
+        for i in range(len(x_star)):
+            y_star[i] += 3
+            if y_star[i] > screen_size:
+                y_star[i] = 0
+        
+        for i in range(len(x_star)):
+            font_star = font.render("*", True, (np.random.randint(180, 255), 
+                                                np.random.randint(180, 255), 
+                                                0))
+            screen.blit(font_star, (x_star[i], y_star[i]))
+
+        pg.display.flip()
+        if pg.time.get_ticks() - begin_time > blingbling_milliseconds:
+            break
 
 
 def draw_background():
@@ -69,7 +99,6 @@ move_radius = int(piece_radius / 5)
 square_colors = [pg.Color('gray'), pg.Color('salmon')]
 piece_colors = [pg.Color('white'), pg.Color('black'), pg.Color('red'), pg.Color('yellow'), pg.Color('black'), pg.Color('white')]
 background_color = pg.Color('#8EA2F3')
-king_img = pg.image.load("imgs/king.png")
 
 
 # init game
@@ -77,12 +106,20 @@ game = init_game(name_p1 = "white", name_p2 = "black")
 curr_pieces = game.pieces.tolist()
 my_row, my_col, possible_moves, possible_pieces = None, None, None, None
 
+# init stars
+nb_stars = 20
+blingbling_milliseconds = 1000
+x_star = []
+y_star = []
+for i in range(0, nb_stars):
+    x_star.append(np.random.randint(0,screen_size))
+    y_star.append(np.random.randint(0,screen_size))
+
 
 pg.init()
 screen = pg.display.set_mode((screen_size + text_size, screen_size))
 surface = pg.Surface((screen_size + text_size, screen_size))
 pg.display.set_caption('AlphaDraughts Zero')
-king_img = king_img.convert()
 clock = pg.time.Clock()
 font = pg.font.Font(None, 36)
 
@@ -125,6 +162,10 @@ while running:
                     # clear
                     else:
                         my_row, my_col, possible_moves, possible_pieces = None, None, None, None
+        elif event.type == pg.KEYDOWN:
+            pressed = pg.key.get_pressed()
+            if pressed[pg.K_w]:
+                blingbling()
 
             if game_over(game.my_map):
                 print("Game Over")
