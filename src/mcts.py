@@ -31,6 +31,9 @@ class StateNode:
             # add action
             for move in moves:
                 out_state = game_mcts.move_piece(self.state, x, y, move)
+                # No further jump possibility, change player
+                if move[1] and len(game_mcts.find_possible_pathes(out_state.my_map, out_state.player.mark, out_state.pieces[0, 0], out_state.pieces[0, 1], True)) == 0:
+                    out_state  = game_mcts.GameState(out_state.my_map, out_state.opponent, out_state.player)
                 action = ActionNode(self, [x, y], move, prior[x, y, move[0]])
                 out_node = StateNode(action, out_state)
                 action.set_child(out_node)
@@ -38,6 +41,7 @@ class StateNode:
 
         # Handle case: no other piece to eat, change player
         if len(self.actions) == 0 and len(pieces) == 1 and self.gameover == 0:
+            print("Strange case")
             self.state = game_mcts.GameState(self.state.my_map, self.state.opponent, self.state.player)
             self.player = self.state.player
 

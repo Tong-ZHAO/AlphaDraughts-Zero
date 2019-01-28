@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import pickle
 import torch
+import visdom
 
 '''
 Example:
@@ -126,3 +127,32 @@ def cross_entropy_continuous_target(prediction, target):
 	'''
 	logsoftmax = torch.nn.LogSoftmax()
 	return torch.mean(torch.sum(- target * logsoftmax(prediction), dim=1))
+
+
+def create_vis_plot(vis, _xlabel, _ylabel, _title):
+    return vis.line(
+        X = np.zeros((1,)),
+        Y = np.zeros((1,)),
+        opts = dict(
+            xlabel = _xlabel,
+            ylabel = _ylabel,
+            title =_title
+        )
+    )
+
+
+def update_vis_plot(vis, iteration, y, window, update_type):
+    vis.line(
+        X = np.ones((1,)) * iteration,
+        Y = np.ones((1,)) * y,
+        win = window,
+        update = update_type
+    )
+    # initialize epoch plot on first iteration
+    if iteration == 0:
+        vis.line(
+            X = np.ones((1,)) * iteration,
+        	Y = np.ones((1,)) * y,
+            win = window,
+            update = "replace"
+        )

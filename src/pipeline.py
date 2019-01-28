@@ -19,11 +19,16 @@ class Pipeline():
 	def __init__(self, model, optimizer, 
 				 dataset_max_size, 
 				 resignation_threshold, 
-				 asycio_data_generation=True):
+				 vis,
+				 asycio_data_generation=False):
 		self.best_mcts = MCTS(StateNode(None, init_game()), config.cpuct) # best player to generate data
 		self.dataset = GameDataset(dataset_max_size)
 		self.resignation_threshold = resignation_threshold # not used for now
 		self.model = model
+		# Initialize visdom
+		self.vis = vis
+		self.iter_plot = create_vis_plot(self.vis, 'Iteration', 'Loss', "Avg Loss")
+		self.len_plot = create_vis_plot(self.vis, 'Iteration', 'Length', "Avg Self-Play Length")
 
 		self.logger = build_logger("pipeline", config.file2write)
 		self.checkpoints_directory = "../checkpoints"
@@ -32,6 +37,10 @@ class Pipeline():
 
 		self.optimizer = optimizer
 		self.asycio_data_generation = asycio_data_generation # Python >= 3.4 
+
+		self.epoch_index = 0
+		self.play_index = 0
+		self.model_index = 0
 
 
 	def train(self, nb_iter):
@@ -55,7 +64,7 @@ class Pipeline():
 			train_loader = torch.utils.data.DataLoader(self.dataset,
 				batch_size=config.batch_size, shuffle=True, num_workers=1)
 
-			for epoch in range(config.nb_epochs_per_iteration):
+			for i, epoch in enumerate(range(config.nb_epochs_per_iteration)):
 				self.train_net_for_one_epoch(train_loader, epoch, iter_)
 
 			if iter_ % config.freq_iter_checkpoint == 0:
@@ -65,6 +74,7 @@ class Pipeline():
 
 	def train_net_for_one_epoch(self, train_loader, epoch, iter_):
 		self.model.train()
+		avg_loss = 0.
 		
 		for batch_idx, (state, target_policy, target_value, dummy) in enumerate(train_loader):
 			state, target_policy, target_value = state.float(), target_policy.float(), target_value.float()
@@ -80,6 +90,7 @@ class Pipeline():
 			loss = mse(value, target_value) + \
 				   cross_entropy_continuous_target(policy, target_policy)
 			loss.backward()
+			avg_loss += float(loss.cpu().detach())
 			self.optimizer.step()
 
 			if batch_idx % config.train_net_log_interval == 0:
@@ -88,15 +99,22 @@ class Pipeline():
 						100. * batch_idx / len(train_loader), loss.data.item())
 				self.message(mess)
 
+		avg_loss = avg_loss / len(self.dataset)
+		update_vis_plot(self.vis, self.epoch_index, avg_loss, self.iter_plot, "append") 
+		self.epoch_index += 1
+
+
 	def save_model(self, iter_=None, nb_iter=None):
-		file_path_model = os.path.join(self.checkpoints_directory, "iter_" + str(iter_) + "/" + str(nb_iter) + "_model.pth")
+		file_path_model = os.path.join(self.checkpoints_directory, "model_" + str(self.model_index) + ".pth")
 		torch.save(self.model.state_dict(), file_path_model)
+		self.model_index += 1
 
 		if iter_ is not None and nb_iter is not None:
 			self.message("Latest model saved as " + file_path_model \
 				+ " (Iteration: " + str(iter_) + "/" + str(nb_iter) + ")")
 
 	def self_play(self, nb_self_play_in_each_iteration):
+
 		if not self.asycio_data_generation:
 			for _ in range(nb_self_play_in_each_iteration):
 				self.self_play_one_game_sync()
@@ -119,7 +137,7 @@ class Pipeline():
 		current_state_node = self.best_mcts.root
 		while z == 0 and not current_state_node.is_leaf():
 			# move one step
-			action_node = current_state_node.best_children(determinstic = True)
+			action_node = current_state_node.best_children(determinstic = False)
 			#game_state = move_piece(current_state_node.state, 
 			#						action_node.x, 
 			#						action_node.y, 
@@ -144,9 +162,15 @@ class Pipeline():
 		# save to disk
 		for i in range(len(buff)):
 			self.dataset.append(buff[i])
+
+		#self.message(buff[-1].state[0])
 		
-		self.message("self-play game length = " + str(len(buff)) \
-			+ ", current dataset size = " + str(len(self.dataset)))
+		#self.message("self-play game length = " + str(len(buff)) \
+		#	+ ", current dataset size = " + str(len(self.dataset)))
+
+		update_vis_plot(self.vis, self.play_index, len(buff), self.len_plot, "append") 
+		self.play_index += 1
+		
 
 	@asyncio.coroutine
 	def self_play_one_game_async(self):
@@ -188,6 +212,7 @@ class Pipeline():
 		
 		self.message("self-play game length = " + str(len(buff)) \
 			+ ", current dataset size = " + str(len(self.dataset)))
+
 
 	def build_new_mcts(self, model):
 		game_state = init_game()

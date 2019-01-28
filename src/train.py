@@ -6,6 +6,7 @@ import config
 import os, time, datetime
 from pipeline import Pipeline
 from model import CNN_Net
+import visdom
 
 def message(mess):
 	logger.info(mess)
@@ -21,8 +22,12 @@ parser.add_argument('--lr', type=float, default=config.lr, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('--seed', type=int, default=config.random_seed, metavar='S',
                     help='random seed (default: 42)')
+parser.add_argument('--env', type = str, default = "alphadraughts", help = 'visdom environment')
 
 args = parser.parse_args()
+
+vis = visdom.Visdom(port = 8097, env = args.env)
+
 torch.manual_seed(args.seed)
 use_cuda = torch.cuda.is_available()
 
@@ -38,7 +43,7 @@ else:
 
 c = 10e-4 # L2 regularization coefficient
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=c)
-pipeline = Pipeline(model, optimizer, config.dataset_max_size, config.resignation_threshold)
+pipeline = Pipeline(model, optimizer, config.dataset_max_size, config.resignation_threshold, vis)
 
 message("Training begins.")
 
