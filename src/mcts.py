@@ -22,7 +22,7 @@ class StateNode:
 
         # find all pieces of the current player
         pieces = self.state.pieces
-        flag_eat = True if (self.parent and self.parent.action[-1] == False) else False
+        flag_eat = self.state.flag_eat
         # find possible moves for the player
         for i in range(len(pieces)):
             x, y = pieces[i, 0], pieces[i, 1]
@@ -116,7 +116,7 @@ class MCTS:
         self.cpuct = cpuct
         self.use_cuda = torch.cuda.is_available()
 
-    def move_to_leaf(self, net, max_iter):
+    def move_to_leaf(self, net, max_iter = 100):
 
         curr_node = self.root
         actions = []
@@ -161,5 +161,5 @@ class MCTS:
         # update value for all passed actions
         for action in actions:
             action.stats['N'] += 1
-            action.stats['W'] += value.data.cpu().numpy()[0]
+            action.stats['W'] += value.data.cpu().numpy()[0] * action.player.mark
             action.stats['Q'] = action.stats['W'] / action.stats['N']

@@ -2,6 +2,9 @@ import pygame as pg
 from game_mcts import *
 import numpy as np
 import sys
+import config
+from model import CNN_Net
+
 
 def change_idx(idx):
     if idx == 0:
@@ -100,8 +103,19 @@ def update_surface():
     draw_pieces()
 
 
+def computer_play(net):
 
-screen_size, text_size = 400, 200
+    my_mcts = MCTS(StateNode(None, game), config.cpuct)
+
+    for i in range(config.nb_simulations):
+        my_mcts.move_to_leaf(net)
+    
+    action_node = my_mcts.root.best_children(True)
+
+    return action_node.out_node.state
+
+
+screen_size, text_size = 400, 0
 square_size = int(screen_size / 8)
 piece_radius = int(square_size / 2)
 move_radius = int(piece_radius / 5)
@@ -115,6 +129,17 @@ background_color = pg.Color('#8EA2F3')
 game = init_game(name_p1 = "white", name_p2 = "black")
 curr_pieces = game.pieces.tolist()
 my_row, my_col, possible_moves, possible_pieces = None, None, None, None
+use_ai = True
+
+if use_ai:
+    import torch
+    from mcts import MCTS, StateNode
+    model = CNN_Net()
+    model.load_state_dict(torch.load("../checkpoints/model_1.pth"))
+
+    use_cuda = torch.cuda.is_available()
+    if use_cuda:
+	    model.cuda()
 
 # init stars
 nb_stars = 50
@@ -137,6 +162,7 @@ draw_pieces()
 running = True
 while running:
     for event in pg.event.get():
+        #print("Here")
         if event.type == pg.QUIT:
             running = False
         elif event.type == pg.MOUSEBUTTONDOWN:
@@ -173,17 +199,25 @@ while running:
             pressed = pg.key.get_pressed()
             if pressed[pg.K_w]:
                 blingbling()
+        
+        if use_ai and game.player.mark == 1 and not game_over(game.my_map):
+        
+            game = computer_play(model)
+            curr_pieces = game.pieces.tolist()
+            pg.event.clear()
 
-        if game_over(game.my_map):
-            print("Game Over")
-            break
-            text = font.render("Game Over", True, pg.Color('white'))
-            text_rect = text.get_rect()
-            text_x = screen.get_width() / 2 - text_rect.width / 2
-            text_y = screen.get_height() / 2 - text_rect.height / 2
-            screen.blit(text, [text_x, text_y])
-            
+    if game_over(game.my_map):
+        blingbling()
+        print("Game Over")
+        text = font.render("Game Over", True, pg.Color('white'))
+        text_rect = text.get_rect()
+        text_x = screen.get_width() / 2 - text_rect.width / 2
+        text_y = screen.get_height() / 2 - text_rect.height / 2
+        screen.blit(text, [text_x, text_y])
+        break
                 
+    
+
                     
     update_surface()
     if possible_moves is not None:

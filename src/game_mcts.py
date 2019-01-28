@@ -105,8 +105,6 @@ def move_piece(old_state, curr_x, curr_y, move):
     val, flag = check_king(my_map, new_x, new_y)
     my_map[new_x, new_y] = val
 
-    
-
     if move[2] or flag:
         return GameState(my_map, old_state.opponent, old_state.player)
     else:
