@@ -31,7 +31,7 @@ class Pipeline():
 		self.len_plot = create_vis_plot(self.vis, 'Iteration', 'Length', "Avg Self-Play Length")
 
 		self.logger = build_logger("pipeline", config.file2write)
-		self.checkpoints_directory = "../checkpoints"
+		self.checkpoints_directory = "../checkpoints/2901"
 		if not os.path.exists(self.checkpoints_directory):
 			os.makedirs(self.checkpoints_directory)
 
@@ -135,22 +135,21 @@ class Pipeline():
 		buff = [] # buffer of data tuples
 		z = 0
 		current_state_node = self.best_mcts.root
-		while z == 0 and not current_state_node.is_leaf():
+		while z == 0:
 			# move one step
-			action_node = current_state_node.best_children(determinstic = False)
-			#game_state = move_piece(current_state_node.state, 
-			#						action_node.x, 
-			#						action_node.y, 
-			#						action_node.action)
+			if current_state_node.is_leaf():
+				action_node = current_state_node.best_children(determinstic = False)
+				search_policy = current_state_node.get_policy()
+			else:
+				action_node, search_policy = self.leaf_simulation(current_state_node)
 
 			# collect data
-			search_policy = current_state_node.get_policy()
 			z = action_node.out_node.gameover
 			current_player = action_node.player.mark
 			buff.append(Data(current_state_node, 
-							   search_policy,
-							   z,
-							   current_player))
+							 search_policy,
+							 z,
+							 current_player))
 			
 			# move to next state node
 			current_state_node = action_node.out_node
@@ -170,6 +169,18 @@ class Pipeline():
 
 		update_vis_plot(self.vis, self.play_index, len(buff), self.len_plot, "append") 
 		self.play_index += 1
+
+
+	def leaf_simulation(self, in_node):
+
+		my_mcts = MCTS(StateNode(None, in_node.state), config.cpuct)
+
+		for i in range(config.nb_simulations):
+			my_mcts.move_to_leaf(self.model)
+		
+		action_node = my_mcts.root.best_children(determinstic = False)
+
+		return action_node, my_mcts.root.get_policy()
 		
 
 	@asyncio.coroutine

@@ -32,7 +32,7 @@ class StateNode:
             for move in moves:
                 out_state = game_mcts.move_piece(self.state, x, y, move)
                 # No further jump possibility, change player
-                if move[1] and len(game_mcts.find_possible_pathes(out_state.my_map, out_state.player.mark, out_state.pieces[0, 0], out_state.pieces[0, 1], True)) == 0:
+                if len(out_state.pieces) > 0 and move[1] and len(game_mcts.find_possible_pathes(out_state.my_map, out_state.player.mark, out_state.pieces[0, 0], out_state.pieces[0, 1], True)) == 0:
                     out_state  = game_mcts.GameState(out_state.my_map, out_state.opponent, out_state.player)
                 action = ActionNode(self, [x, y], move, prior[x, y, move[0]])
                 out_node = StateNode(action, out_state)
@@ -154,12 +154,17 @@ class MCTS:
         net.eval()
         value, prior = net(curr_input)
 
+        path_w = value.data.cpu().numpy()[0]
+
         if curr_node.is_leaf():
-            curr_node.init_children(prior.cpu().detach().numpy())
-            self.num_node += len(curr_node.actions)
+            if curr_node.gameover == 0:
+                curr_node.init_children(prior.cpu().detach().numpy())
+                self.num_node += len(curr_node.actions)
+            else:
+                path_w = curr_node.gameover
 
         # update value for all passed actions
         for action in actions:
             action.stats['N'] += 1
-            action.stats['W'] += value.data.cpu().numpy()[0] * action.player.mark
+            action.stats['W'] += path_w * action.player.mark
             action.stats['Q'] = action.stats['W'] / action.stats['N']
