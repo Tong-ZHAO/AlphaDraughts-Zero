@@ -135,9 +135,12 @@ if use_ai:
     import torch
     from mcts import MCTS, StateNode
     model = CNN_Net()
-    model.load_state_dict(torch.load("../checkpoints/model_1.pth"))
-
     use_cuda = torch.cuda.is_available()
+    if not use_cuda:
+        model.load_state_dict(torch.load("../checkpoints/model_1.pth", map_location='cpu'))
+    else:
+        model.load_state_dict(torch.load("../checkpoints/model_1.pth"))
+
     if use_cuda:
 	    model.cuda()
 
