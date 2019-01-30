@@ -14,7 +14,7 @@ def change_idx(idx):
 
 
 def blingbling():
-    begin_time = pg.time.get_ticks()
+    #begin_time = pg.time.get_ticks()
     x_star = []
     y_star = []
     for i in range(0, nb_stars):
@@ -26,9 +26,9 @@ def blingbling():
         for event in pg.event.get():
             if event.type == pg.QUIT: # quit application
                 sys.exit()
-            elif event.type == pg.MOUSEBUTTONDOWN: # quick quit animation
-                if event.button == 1: 
-                    return
+            #elif event.type == pg.MOUSEBUTTONDOWN: # quick quit animation
+            #    if event.button == 1: 
+            #        return
         
         for i in range(len(x_star)):
             y_star[i] += 3
@@ -36,9 +36,9 @@ def blingbling():
             if y_star[i] >= screen_size:
                 y_star[i] = 0
             if x_star[i] >= screen_size:
-                x_star[i] = screen_size - 1
-            elif x_star[i] < 0:
                 x_star[i] = 0
+            elif x_star[i] < 0:
+                x_star[i] = screen_size - 1
         
         for i in range(len(x_star)):
             font_star = font.render("*", True, (np.random.randint(125, 255), 
@@ -47,8 +47,8 @@ def blingbling():
             screen.blit(font_star, (x_star[i], y_star[i]))
 
         pg.display.flip()
-        if pg.time.get_ticks() - begin_time > blingbling_milliseconds:
-            return
+        #if pg.time.get_ticks() - begin_time > blingbling_milliseconds:
+        #    return
 
 
 def draw_background():

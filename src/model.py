@@ -15,8 +15,8 @@ class CNN_Net(nn.Module):
 		self.value_head = Value_head()
 		self.policy_head = Policy_head()
 		self.logger = build_logger("model", config.file2write)
-		self.message("Number of trainable parameters is " + \
-			str(self.number_of_trainable_parameters()))
+		#self.message("Number of trainable parameters is " + \
+		#	str(self.number_of_trainable_parameters()))
 
 
 	def forward(self, x):
