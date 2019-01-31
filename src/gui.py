@@ -151,7 +151,7 @@ use_ai = args.ai
 if use_ai:
     import torch
     from mcts import MCTS, StateNode
-    model = CNN_Net()
+    model = CNN_Net(use_log=False)
     use_cuda = torch.cuda.is_available()
     file_path = os.path.join("../checkpoints", args.checkpoint)
     if not use_cuda:

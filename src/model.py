@@ -8,13 +8,14 @@ map_size = (8, 8)
 
 # class to be used
 class CNN_Net(nn.Module):
-	def __init__(self):
+	def __init__(self, use_log=True):
 		super(CNN_Net, self).__init__()
 		self.conv_block = Conv_block()
 		self.residual_blocks = self.__make_residual_blocks()
 		self.value_head = Value_head()
 		self.policy_head = Policy_head()
-		self.logger = build_logger("model", config.file2write)
+		if use_log:
+			self.logger = build_logger("model", config.file2write)
 
 
 	def forward(self, x):
@@ -39,9 +40,14 @@ class CNN_Net(nn.Module):
 		example_input = torch.randn((5, 3, 8, 8))
 		values, policies = model(example_input)
 
-		self.message("Value head output shape: " + str(values.shape))
-		self.message("Policy head output shape: " + str(policies.shape))
-		self.message(model)
+		if use_log:
+			self.message("Value head output shape: " + str(values.shape))
+			self.message("Policy head output shape: " + str(policies.shape))
+			self.message(model)
+		else:
+			print("Value head output shape: " + str(values.shape))
+			print("Policy head output shape: " + str(policies.shape))
+			print(model)
 
 	def message(self, mess):
 		self.logger.info(mess)
