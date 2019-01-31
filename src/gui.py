@@ -1,9 +1,10 @@
 import pygame as pg
 from game_mcts import *
 import numpy as np
-import sys
+import sys, os
 import config
 from model import CNN_Net
+import argparse
 
 
 def change_idx(idx):
@@ -107,12 +108,28 @@ def computer_play(net):
 
     my_mcts = MCTS(StateNode(None, game), config.cpuct)
 
-    for i in range(config.nb_simulations):
+    for i in range(args.simulation):
         my_mcts.move_to_leaf(net)
     
     action_node = my_mcts.root.best_children(True)
 
     return action_node.out_node.state
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--checkpoint", type=str, default="model_21.pth", metavar='C',
+                    help="which neural network model checkpoint to use.")
+parser.add_argument("--human", type=str, default="white", metavar="H",
+                    help='"white" or "black", which side human player plays, white side always goes first.')
+parser.add_argument("--simulation", type=int, default=config.nb_simulations, metavar="S",
+                    help="number of simulations for MCTS at each time step to choose the action.")
+parser.add_argument("--ai", type=int, default=1, metavar="A",
+                    help="whether use AI, 1 means using AI, 0 means not using AI.")
+args = parser.parse_args()
+assert args.human in ["black", "white"], "Please choose whether black or white for --human"
+assert args.ai in [0, 1], "Please choose whether 1 or 0 for --ai"
+assert args.simulation > 0, "--simulation should be greater than 0"
 
 
 screen_size, text_size = 400, 0
@@ -129,20 +146,26 @@ background_color = pg.Color('#8EA2F3')
 game = init_game(name_p1 = "white", name_p2 = "black")
 curr_pieces = game.pieces.tolist()
 my_row, my_col, possible_moves, possible_pieces = None, None, None, None
-use_ai = True
+use_ai = args.ai
 
 if use_ai:
     import torch
     from mcts import MCTS, StateNode
     model = CNN_Net()
     use_cuda = torch.cuda.is_available()
+    file_path = os.path.join("../checkpoints", args.checkpoint)
     if not use_cuda:
-        model.load_state_dict(torch.load("../checkpoints/model_1.pth", map_location='cpu'))
+        model.load_state_dict(torch.load(file_path, map_location='cpu'))
     else:
-        model.load_state_dict(torch.load("../checkpoints/model_1.pth"))
+        model.load_state_dict(torch.load(file_path))
 
     if use_cuda:
 	    model.cuda()
+
+if args.human == "black":
+    mark_ = 1
+else:
+    mark_ = - 1
 
 # init stars
 nb_stars = 50
@@ -198,20 +221,20 @@ while running:
                     # clear
                     else:
                         my_row, my_col, possible_moves, possible_pieces = None, None, None, None
-        elif event.type == pg.KEYDOWN:
-            pressed = pg.key.get_pressed()
-            if pressed[pg.K_w]:
-                blingbling()
+        #elif event.type == pg.KEYDOWN:
+        #    pressed = pg.key.get_pressed()
+        #    if pressed[pg.K_w]:
+        #        blingbling()
         
-        if use_ai and game.player.mark == 1 and not game_over(game.my_map):
+        if use_ai and game.player.mark == mark_ and not game_over(game.my_map):
         
             game = computer_play(model)
             curr_pieces = game.pieces.tolist()
             pg.event.clear()
 
     if game_over(game.my_map):
-        blingbling()
         print("Game Over")
+        blingbling()
         text = font.render("Game Over", True, pg.Color('white'))
         text_rect = text.get_rect()
         text_x = screen.get_width() / 2 - text_rect.width / 2

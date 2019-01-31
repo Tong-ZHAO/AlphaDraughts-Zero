@@ -44,6 +44,9 @@ class Pipeline():
 
 
 	def train(self, nb_iter):
+		self.message("Number of trainable parameters is " + 
+			str(self.model.number_of_trainable_parameters()))
+		
 		for iter_ in range(1, nb_iter + 1):
 			self.message("Pipeline training iteration: (" + \
 				str(iter_) + ", " + str(nb_iter) + ")")
